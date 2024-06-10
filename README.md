@@ -1,2 +1,1 @@
-# SpriteSliced
-
+# Sprite Slicer
