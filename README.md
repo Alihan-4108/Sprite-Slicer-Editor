@@ -1,4 +1,2 @@
-# SpriteSlice
+# SpriteSliced
 
-
-sa
