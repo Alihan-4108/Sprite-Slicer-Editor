@@ -11,7 +11,7 @@ public class SpriteSlicer : EditorWindow
     private string folderName = "ToSlice";
 
 
-    [MenuItem("Window/EditorHelper/SliceSprites")]
+    [MenuItem("Window/SliceSprites")]
     public static void ShowWindow()
     {
         GetWindow<SpriteSlicer>("Sprite Slicer");
