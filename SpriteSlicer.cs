@@ -2,14 +2,22 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.IsolatedStorage;
 
 public class SpriteSlicer : EditorWindow
 {
-    private int sliceWidth = 64;
-    private int sliceHeight = 64;
-    private string folderName = "ToSlice";
+    /*
+    
+                 Attention! After the sprites are sliced,
+                 they will be stacked in the Resources/ToSlice folder
+   
+     */
 
+    private int sliceWidth;
+    private int sliceHeight;
+
+    private List<Sprite> sprites = new List<Sprite>();
+
+    private Vector2 scrollPosition;
 
     [MenuItem("Window/SliceSprites")]
     public static void ShowWindow()
@@ -19,55 +27,123 @@ public class SpriteSlicer : EditorWindow
 
     private void OnGUI()
     {
+        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Width(position.width), GUILayout.Height(position.height));
+
         GUILayout.Label("Sprite Slicer Settings", EditorStyles.boldLabel);
 
-        sliceWidth = EditorGUILayout.IntField("Slice Width", sliceWidth);
-        sliceHeight = EditorGUILayout.IntField("Slice Height", sliceHeight);
-        //folderName = EditorGUILayout.TextField("Folder Path", folderName);
-
+        sliceWidth = EditorGUILayout.IntSlider("Slice Width", sliceWidth, 1, 512);
+        sliceHeight = EditorGUILayout.IntSlider("Slice Height", sliceHeight, 1, 512);
 
         GUILayout.Space(20);
-        GUILayout.Label("Create New Folder", EditorStyles.boldLabel);
 
-        folderName = EditorGUILayout.TextField("Klasör Adý", folderName);
+        #region Prepared sizing settings
+        EditorGUILayout.BeginHorizontal();
 
-        if (GUILayout.Button("Create Folder"))
+        int buttonCount = 4;
+        float buttonWidth = (position.width - 15) / buttonCount;
+
+        for (int i = 1; i <= buttonCount; i++)
         {
-            CreateFileInResources();
+            int size = (int)Mathf.Pow(2, i + 3);
+            if (GUILayout.Button($"{size}x{size}", GUILayout.Width(buttonWidth)))
+            {
+                sliceWidth = sliceHeight = size;
+            }
         }
 
+        EditorGUILayout.EndHorizontal();
+        #endregion
 
-        if (GUILayout.Button("Slice Sprites"))
+        GUILayout.Space(20);
+
+        #region Sprite Fields
+        for (int i = 0; i < sprites.Count; i++)
         {
-            SliceSprites();
+            EditorGUILayout.BeginHorizontal();
+            sprites[i] = (Sprite)EditorGUILayout.ObjectField(sprites[i], typeof(Sprite), false);
+
+            if (GUILayout.Button("Remove", GUILayout.Width(70)))
+            {
+                sprites.RemoveAt(i);
+                i--;
+            }
+            EditorGUILayout.EndHorizontal();
         }
+        #endregion
+
+        #region Sprite Add Button
+        if (GUILayout.Button("Add Sprite", GUILayout.Height(30)))
+        {
+            sprites.Add(null);
+        }
+        #endregion
+
+        #region Slice Button
+        if (GUILayout.Button("Slice", GUILayout.Height(30)))
+        {
+            Slice();
+        }
+        #endregion
+
+        EditorGUILayout.EndScrollView();
     }
 
-    private void SliceSprites()
+    private void Slice()
     {
-        // Change the below for the with and height dimensions of each sprite within the spritesheets
+        //Create folder path
+        string resourcesPath = Path.Combine(Application.dataPath, "Resources");
+        string folderPath = Path.Combine(resourcesPath, "ToSlice");
 
-        // Change the below for the path to the folder containing the sprite sheets (warning: not tested on folders containing anything other than just spritesheets!)
-        // Ensure the folder is within 'Assets/Resources/' (the below example folder's full path within the project is 'Assets/Resources/ToSlice')
-
-        Object[] spriteSheets = Resources.LoadAll(folderName, typeof(Texture2D)); //ToSlice klasörü içine atýlan bütün Texture2D objelerini bul ve dizinin içine at
-        if (spriteSheets.Length != 0)
+        if (!Directory.Exists(folderPath))
         {
-            Debug.Log("spriteSheets.Length: " + spriteSheets.Length);
+            Directory.CreateDirectory(folderPath);
+            AssetDatabase.Refresh();
         }
-        else
+
+        for (int i = 0; i < sprites.Count; i++)
         {
-            Debug.LogWarning("There are no sprites in the folder");
+            Sprite sprite = sprites[i];
+
+            if (sprite != null)
+            {
+                string spritePath = AssetDatabase.GetAssetPath(sprite);
+                string spriteDirectory = Path.GetDirectoryName(spritePath);
+
+                if (!spriteDirectory.EndsWith("ToSlice"))
+                {
+                    // Kopyalama iÅŸlemi
+                    string newSpritePath = Path.Combine("Assets/Resources/ToSlice", Path.GetFileName(spritePath));
+                    AssetDatabase.CopyAsset(spritePath, newSpritePath);
+                    AssetDatabase.DeleteAsset(spritePath);
+                }
+
+            }
+        }
+
+        AssetDatabase.Refresh();
+
+        SpriteSlice();
+    }
+
+    private void SpriteSlice()
+    {
+        Object[] spriteSheets = Resources.LoadAll("ToSlice", typeof(Texture2D));
+        if (spriteSheets.Length == 0)
+        {
+            Debug.LogWarning("No sprites found in the ToSlice folder");
+            return;
         }
 
         for (int z = 0; z < spriteSheets.Length; z++)
         {
-            Debug.Log("z: " + z + " spriteSheets[z]: " + spriteSheets[z]);
+            Debug.Log(spriteSheets[z]);
 
-            string path = AssetDatabase.GetAssetPath(spriteSheets[z]); //Textureleri yolunu bul
-            TextureImporter ti = AssetImporter.GetAtPath(path) as TextureImporter; //Bu kod parçasý, path deðiþkeni ile belirtilen texture dosyasýnýn import ayarlarýný TextureImporter nesnesi üzerinden kontrol etmenizi saðlar.
-            ti.isReadable = true; //Textureyi okunabilir yap
-            ti.spriteImportMode = SpriteImportMode.Multiple; //Sprite modunu multiple yap
+            string path = AssetDatabase.GetAssetPath(spriteSheets[z]);
+            TextureImporter ti = AssetImporter.GetAtPath(path) as TextureImporter;
+            ti.isReadable = true;
+            ti.spriteImportMode = SpriteImportMode.Multiple;
+            ti.filterMode = FilterMode.Point;
+            ti.textureCompression = TextureImporterCompression.Uncompressed;
 
             List<SpriteMetaData> newData = new List<SpriteMetaData>();
 
@@ -95,22 +171,5 @@ public class SpriteSlicer : EditorWindow
         {
             Debug.Log("Done Slicing!");
         }
-    }
-
-    private void CreateFileInResources()
-    {
-        string resourcesYolu = Path.Combine(Application.dataPath, "Resources");
-        string klasorYolu = Path.Combine(resourcesYolu, folderName);
-
-        // Resources klasörünün var olduðundan emin ol
-        if (!Directory.Exists(resourcesYolu))
-        {
-            Directory.CreateDirectory(resourcesYolu);
-        }
-
-        // Klasörü oluþtur
-        Directory.CreateDirectory(klasorYolu);
-        AssetDatabase.Refresh();
-        Debug.Log("File Created");
     }
 }
