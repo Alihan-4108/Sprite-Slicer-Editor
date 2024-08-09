@@ -4,7 +4,7 @@ using UnityEditorInternal;
 using System.Collections.Generic;
 using System.IO;
 
-public class SpriteSlicer : EditorWindow
+internal class SpriteSlicer : EditorWindow
 {
     /*
 
@@ -15,13 +15,22 @@ public class SpriteSlicer : EditorWindow
 
     */
 
-    private int sliceWidth;
-    private int sliceHeight;
-
     private List<Sprite> sprites = new List<Sprite>();
     private ReorderableList reorderableList;
 
     private Vector2 scrollPosition;
+
+    #region Settings Variables
+    private bool settings = false;
+
+    private int pixelsPerUnit = 100;
+    private int sliceWidth;
+    private int sliceHeight;
+
+    private Vector2 pivot = new Vector2(0.5f, 0.5f);
+
+    private FilterMode filterMode = FilterMode.Point;
+    #endregion
 
     [MenuItem("Window/SpriteSlicer")]
     public static void ShowWindow()
@@ -39,9 +48,29 @@ public class SpriteSlicer : EditorWindow
         scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Width(position.width), GUILayout.Height(position.height));
 
         SliceSettings();
+
+        GUILayout.Space(10);
+
+        SpriteSettings();
+
         DrawSpriteList();
 
         GUILayout.Space(20);
+
+        #region Clear All Sprites Button
+        if (sprites.Count > 0)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Clear All", GUILayout.Width(100), GUILayout.Height(20)))
+            {
+                sprites.Clear();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(10);
+        }
+        #endregion
 
         #region Slice Button
         if (GUILayout.Button("Slice", GUILayout.Height(30)))
@@ -78,6 +107,11 @@ public class SpriteSlicer : EditorWindow
 
         AssetDatabase.Refresh();
         SpriteSliceCore();
+
+        sprites.Clear();
+        reorderableList.list = sprites;
+
+        Repaint();
     }
 
     private void SpriteSliceCore()
@@ -95,8 +129,9 @@ public class SpriteSlicer : EditorWindow
             TextureImporter ti = AssetImporter.GetAtPath(path) as TextureImporter;
             ti.isReadable = true;
             ti.spriteImportMode = SpriteImportMode.Multiple;
-            ti.filterMode = FilterMode.Point;
+            ti.filterMode = filterMode;
             ti.textureCompression = TextureImporterCompression.Uncompressed;
+            ti.spritePixelsPerUnit = pixelsPerUnit;
 
             List<SpriteMetaData> newData = new List<SpriteMetaData>();
             Texture2D spriteSheet = spriteSheets[z] as Texture2D;
@@ -106,8 +141,8 @@ public class SpriteSlicer : EditorWindow
                 for (int j = spriteSheet.height; j > 0; j -= sliceHeight)
                 {
                     SpriteMetaData smd = new SpriteMetaData();
-                    smd.pivot = new Vector2(0.5f, 0.5f);
-                    smd.alignment = 9;
+                    smd.pivot = pivot;
+                    smd.alignment = 9; //Custom
                     smd.name = (spriteSheet.height - j) / sliceHeight + ", " + i / sliceWidth;
                     smd.rect = new Rect(i, j - sliceHeight, sliceWidth, sliceHeight);
 
@@ -147,22 +182,64 @@ public class SpriteSlicer : EditorWindow
 
         GUILayout.Space(20);
 
-        SliceSizeButtons();
+        ButtonGroup(buttonCount: 4, widthValue: 15, labelFormat: "{0}x{0}", onButtonClick: size => sliceWidth = sliceHeight = size);
     }
 
-    private void SliceSizeButtons()
+    private void SpriteSettings()
+    {
+        settings = EditorGUILayout.Toggle("Settings", settings);
+        if (settings)
+        {
+            #region Pivot
+            GUILayout.Space(5);
+            EditorGUILayout.BeginHorizontal();
+            {
+                GUILayout.Space(10);
+                pivot = EditorGUILayout.Vector2Field("Pivot", pivot, GUILayout.Width(200));
+            }
+            EditorGUILayout.EndHorizontal();
+            #endregion
+
+            #region Pixels Per Unit
+            GUILayout.Space(10);
+            EditorGUILayout.BeginHorizontal();
+            {
+                GUILayout.Label("Pixels Per Unit", GUILayout.Width(120));
+                pixelsPerUnit = EditorGUILayout.IntSlider(pixelsPerUnit, 1, 100);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+
+            ButtonGroup(buttonCount: 3, widthValue: 12, labelFormat: "{0}", onButtonClick: size => pixelsPerUnit = size);
+
+            EditorGUILayout.EndHorizontal();
+            #endregion
+
+            #region Filter Mode
+            GUILayout.Space(15);
+            EditorGUILayout.BeginHorizontal();
+            {
+                GUILayout.Label("Filter Mode", GUILayout.Width(120));
+                filterMode = (FilterMode)EditorGUILayout.EnumPopup(filterMode, GUILayout.Width(200));
+            }
+            EditorGUILayout.EndHorizontal();
+            #endregion
+        }
+    }
+
+    private void ButtonGroup(int buttonCount, int widthValue, string labelFormat, System.Action<int> onButtonClick)
     {
         EditorGUILayout.BeginHorizontal();
 
-        int buttonCount = 4;
-        float buttonWidth = (position.width - 15) / buttonCount;
+        float buttonWidth = (position.width - widthValue) / buttonCount;
 
         for (int i = 1; i <= buttonCount; i++)
         {
             int size = (int)Mathf.Pow(2, i + 3);
-            if (GUILayout.Button($"{size}x{size}", GUILayout.Width(buttonWidth)))
+            if (GUILayout.Button(string.Format(labelFormat, size), GUILayout.Width(buttonWidth)))
             {
-                sliceWidth = sliceHeight = size;
+                onButtonClick(size);
             }
         }
 
@@ -211,7 +288,6 @@ public class SpriteSlicer : EditorWindow
             onRemoveCallback = list => sprites.RemoveAt(list.index)
         };
     }
-
 
     #region DragAndDropSystem
     private void HandleDragAndDrop()
