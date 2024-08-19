@@ -15,6 +15,16 @@ internal class SpriteSlicer : EditorWindow
 
     */
 
+    public enum SpriteNamingScheme
+    {
+        PrefixNumber,    // Önek + numara (ör. sprite_1)
+        PrefixParenthesesNumber,  // Önek + parantez içi numara (ör. sprite(1))
+        PrefixNumberWithLeadingZeros  // Önek + sıfırlarla dolu numara (ör. sprite001)
+    }
+    private SpriteNamingScheme namingScheme = SpriteNamingScheme.PrefixNumber; // Varsayılan isimlendirme şeması
+    private string spritePrefix = "sprite_"; // İsim öneki
+    private int leadingZeros = 3; // Numara formatında sıfır sayısı
+
     private List<Sprite> sprites = new List<Sprite>();
     private ReorderableList reorderableList;
 
@@ -138,6 +148,7 @@ internal class SpriteSlicer : EditorWindow
             List<SpriteMetaData> newData = new List<SpriteMetaData>();
             Texture2D spriteSheet = spriteSheets[z] as Texture2D;
 
+            int spriteIndex = 0;
             for (int i = 0; i < spriteSheet.width; i += sliceWidth)
             {
                 for (int j = spriteSheet.height; j > 0; j -= sliceHeight)
@@ -145,8 +156,10 @@ internal class SpriteSlicer : EditorWindow
                     SpriteMetaData smd = new SpriteMetaData();
                     smd.pivot = pivot;
                     smd.alignment = 9; //Custom
-                    smd.name = (spriteSheet.height - j) / sliceHeight + ", " + i / sliceWidth;
                     smd.rect = new Rect(i, j - sliceHeight, sliceWidth, sliceHeight);
+
+                    string spriteName = GenerateSpriteName(spriteIndex++);
+                    smd.name = spriteName;
 
                     newData.Add(smd);
                 }
@@ -159,6 +172,24 @@ internal class SpriteSlicer : EditorWindow
         if (spriteSheets.Length != 0)
         {
             Debug.Log("Done Slicing!");
+        }
+    }
+
+    private string GenerateSpriteName(int index)
+    {
+        switch (namingScheme)
+        {
+            case SpriteNamingScheme.PrefixNumber:
+                return $"{spritePrefix}{index + 1}";
+
+            case SpriteNamingScheme.PrefixParenthesesNumber:
+                return $"{spritePrefix}({index + 1})";
+
+            case SpriteNamingScheme.PrefixNumberWithLeadingZeros:
+                return $"{spritePrefix}{(index + 1).ToString($"D{leadingZeros}")}";
+
+            default:
+                return $"{spritePrefix}{index + 1}";
         }
     }
 
@@ -274,6 +305,32 @@ internal class SpriteSlicer : EditorWindow
             {
                 GUILayout.Label("Filter Mode", GUILayout.Width(120));
                 filterMode = (FilterMode)EditorGUILayout.EnumPopup(filterMode, GUILayout.Width(200));
+            }
+            EditorGUILayout.EndHorizontal();
+            #endregion
+
+            #region Sprite Naming Scheme
+            GUILayout.Space(15);
+            namingScheme = (SpriteNamingScheme)EditorGUILayout.EnumPopup("Naming Scheme", namingScheme);
+
+            if (namingScheme == SpriteNamingScheme.PrefixNumberWithLeadingZeros)
+            {
+                GUILayout.Space(10);
+                EditorGUILayout.BeginHorizontal();
+                {
+                    GUILayout.Label("Leading Zeros", GUILayout.Width(120));
+                    leadingZeros = EditorGUILayout.IntSlider(leadingZeros, 1, 5);
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            #endregion
+
+            #region Sprite Prefix
+            GUILayout.Space(5);
+            EditorGUILayout.BeginHorizontal();
+            {
+                GUILayout.Label("Sprite Prefix", GUILayout.Width(120));
+                spritePrefix = EditorGUILayout.TextField(spritePrefix, GUILayout.Width(200));
             }
             EditorGUILayout.EndHorizontal();
             #endregion
