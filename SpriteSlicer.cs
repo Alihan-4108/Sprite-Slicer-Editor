@@ -24,8 +24,10 @@ internal class SpriteSlicer : EditorWindow
     private bool settings = false;
 
     private int pixelsPerUnit = 100;
-    private int sliceWidth;
-    private int sliceHeight;
+    private int sliceWidth = 8;
+    private int sliceHeight = 8;
+    private int[] sliceOptions = new int[] { 8, 16, 24, 32, 48, 64, 96, 128, 256, 512 };
+    private bool showAdvancedSettings = false;
 
     private Vector2 pivot = new Vector2(0.5f, 0.5f);
 
@@ -177,13 +179,64 @@ internal class SpriteSlicer : EditorWindow
     {
         GUILayout.Label("Sprite Slicer Settings", EditorStyles.boldLabel);
 
+        if (!showAdvancedSettings)
+        {
+            DrawSimpleSliders();
+        }
+        else
+        {
+            DrawAdvancedSliders();
+        }
+
+        GUIContent advancedToogleContent = new GUIContent("Advanced", "Enable advanced options for manual slice width and height.");
+        showAdvancedSettings = EditorGUILayout.Toggle(advancedToogleContent, showAdvancedSettings);
+
+        GUILayout.Space(5);
+
+        GUILayout.Label("Quick Selection");
+
+        ButtonGroup(buttonCount: 4, widthValue: 15, labelFormat: "{0}x{0}", onButtonClick: size =>
+        {
+            sliceWidth = sliceHeight = size;
+        });
+
+    }
+
+    #region Slice Settings Methods
+    private void DrawSimpleSliders()
+    {
+        sliceWidth = EditorGUILayout.IntSlider("Slice Width", sliceWidth, sliceOptions[0], sliceOptions[^1]);
+        sliceHeight = EditorGUILayout.IntSlider("Slice Height", sliceHeight, sliceOptions[0], sliceOptions[^1]);
+
+        sliceWidth = RoundToNearestOption(sliceWidth);
+        sliceHeight = RoundToNearestOption(sliceHeight);
+    }
+
+    private void DrawAdvancedSliders()
+    {
         sliceWidth = EditorGUILayout.IntSlider("Slice Width", sliceWidth, 1, 512);
         sliceHeight = EditorGUILayout.IntSlider("Slice Height", sliceHeight, 1, 512);
-
-        GUILayout.Space(20);
-
-        ButtonGroup(buttonCount: 4, widthValue: 15, labelFormat: "{0}x{0}", onButtonClick: size => sliceWidth = sliceHeight = size);
     }
+
+    private int RoundToNearestOption(int value)
+    {
+        int closestValue = sliceOptions[0];
+        float minDifference = Mathf.Abs(value - closestValue);
+
+        for (int i = 0; i < sliceOptions.Length; i++)
+        {
+            int option = sliceOptions[i];
+            float difference = Mathf.Abs(value - option);
+            if (difference < minDifference)
+            {
+                minDifference = difference;
+                closestValue = option;
+            }
+        }
+
+        return closestValue;
+    }
+    #endregion
 
     private void SpriteSettings()
     {
