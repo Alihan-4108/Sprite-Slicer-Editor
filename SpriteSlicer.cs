@@ -199,7 +199,6 @@ internal class SpriteSlicer : EditorWindow
         {
             sliceWidth = sliceHeight = size;
         });
-
     }
 
     #region Slice Settings Methods
