@@ -15,16 +15,6 @@ internal class SpriteSlicer : EditorWindow
 
     */
 
-    public enum SpriteNamingScheme
-    {
-        PrefixNumber,    // Önek + numara (ör. sprite_1)
-        PrefixParenthesesNumber,  // Önek + parantez içi numara (ör. sprite(1))
-        PrefixNumberWithLeadingZeros  // Önek + sıfırlarla dolu numara (ör. sprite001)
-    }
-    private SpriteNamingScheme namingScheme = SpriteNamingScheme.PrefixNumber; // Varsayılan isimlendirme şeması
-    private string spritePrefix = "sprite_"; // İsim öneki
-    private int leadingZeros = 3; // Numara formatında sıfır sayısı
-
     private List<Sprite> sprites = new List<Sprite>();
     private ReorderableList reorderableList;
 
@@ -42,6 +32,17 @@ internal class SpriteSlicer : EditorWindow
     private Vector2 pivot = new Vector2(0.5f, 0.5f);
 
     private FilterMode filterMode = FilterMode.Point;
+
+    //Sprite Naming
+    public enum SpriteNamingScheme
+    {
+        PrefixNumber,    // Prefix + number for example sprite_1
+        PrefixParenthesesNumber,  // Prefix + number in parentheses for example sprite_(1)
+        PrefixNumberWithLeadingZeros  // Prefix + number filled with zeros for example sprite001
+    }
+    private SpriteNamingScheme namingScheme = SpriteNamingScheme.PrefixNumber;
+    private string spritePrefix = "sprite_";
+    private int leadingZeros = 3;
     #endregion
 
     [MenuItem("Window/SpriteSlicer")]
