@@ -1,6 +1,7 @@
 # Sprite Slicer Editor
 
-This editor was made for you to slice sprites in bulk
+This editor is made for batch slicing sprites for your 2D games 
+(developed for the Unity game engine). 
 
                 Attention! After the sprites are sliced,
                 they will be stacked in the Resources/ToSlice folder
