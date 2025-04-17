@@ -1,8 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 internal class SpriteSlicer : EditorWindow
 {
@@ -21,13 +22,14 @@ internal class SpriteSlicer : EditorWindow
     private Vector2 scrollPosition;
 
     #region Settings Variables
-    private bool settings = false;
-
     private int pixelsPerUnit = 100;
     private int sliceWidth = 8;
     private int sliceHeight = 8;
     private int[] sliceOptions = new int[] { 8, 16, 24, 32, 48, 64, 96, 128, 256, 512 };
+
     private bool showAdvancedSettings = false;
+    private bool showSliceSettings = true;
+    private bool showSpriteSettings = true;
 
     private Vector2 pivot = new Vector2(0.5f, 0.5f);
 
@@ -60,11 +62,13 @@ internal class SpriteSlicer : EditorWindow
     {
         scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Width(position.width), GUILayout.Height(position.height));
 
-        SliceSettings();
+        showSliceSettings = EditorGUILayout.Foldout(showSliceSettings, "Slice Settings", true, EditorStyles.foldoutHeader);
+        if (showSliceSettings) SliceSettings();
 
         GUILayout.Space(10);
 
-        SpriteSettings();
+        showSpriteSettings = EditorGUILayout.Foldout(showSpriteSettings, "Sprite Settings", true, EditorStyles.foldoutHeader);
+        if (showSpriteSettings) SpriteSettings();
 
         DrawSpriteList();
 
@@ -75,10 +79,20 @@ internal class SpriteSlicer : EditorWindow
         {
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
+
+            // Original color save
+            Color originalColor = GUI.backgroundColor;
+
+            // Clear All Button - Kırmızı renk
+            GUI.backgroundColor = Color.red;
+
             if (GUILayout.Button("Clear All", GUILayout.Width(100), GUILayout.Height(20)))
             {
                 sprites.Clear();
             }
+
+            GUI.backgroundColor = originalColor;
+
             GUILayout.EndHorizontal();
 
             GUILayout.Space(10);
@@ -86,10 +100,15 @@ internal class SpriteSlicer : EditorWindow
         #endregion
 
         #region Slice Button
+        Color originalSliceColor = GUI.backgroundColor;
+        GUI.backgroundColor = Color.green; 
+
         if (GUILayout.Button("Slice", GUILayout.Height(30)))
         {
             Slice();
         }
+
+        GUI.backgroundColor = originalSliceColor;
         #endregion
 
         EditorGUILayout.EndScrollView();
@@ -209,7 +228,14 @@ internal class SpriteSlicer : EditorWindow
 
     private void SliceSettings()
     {
-        GUILayout.Label("Sprite Slicer Settings", EditorStyles.boldLabel);
+        GUIStyle headerStyle = new GUIStyle(EditorStyles.label);
+        headerStyle.fontSize = 14;
+        headerStyle.fontStyle = FontStyle.Bold;
+        headerStyle.normal.textColor = new Color(0.2f, 0.6f, 1f);
+
+        GUILayout.Label("Sprite Slicer Settings", headerStyle);
+
+        GUILayout.Space(5);
 
         if (!showAdvancedSettings)
         {
@@ -271,71 +297,67 @@ internal class SpriteSlicer : EditorWindow
 
     private void SpriteSettings()
     {
-        settings = EditorGUILayout.Toggle("Settings", settings);
-        if (settings)
+        #region Pivot
+        GUILayout.Space(5);
+        EditorGUILayout.BeginHorizontal();
         {
-            #region Pivot
-            GUILayout.Space(5);
-            EditorGUILayout.BeginHorizontal();
-            {
-                GUILayout.Space(10);
-                pivot = EditorGUILayout.Vector2Field("Pivot", pivot, GUILayout.Width(200));
-            }
-            EditorGUILayout.EndHorizontal();
-            #endregion
+            GUILayout.Space(10);
+            pivot = EditorGUILayout.Vector2Field("Pivot", pivot, GUILayout.Width(200));
+        }
+        EditorGUILayout.EndHorizontal();
+        #endregion
 
-            #region Pixels Per Unit
+        #region Pixels Per Unit
+        GUILayout.Space(10);
+        EditorGUILayout.BeginHorizontal();
+        {
+            GUILayout.Label("Pixels Per Unit", GUILayout.Width(120));
+            pixelsPerUnit = EditorGUILayout.IntSlider(pixelsPerUnit, 1, 100);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+
+        ButtonGroup(buttonCount: 3, widthValue: 12, labelFormat: "{0}", onButtonClick: size => pixelsPerUnit = size);
+
+        EditorGUILayout.EndHorizontal();
+        #endregion
+
+        #region Filter Mode
+        GUILayout.Space(15);
+        EditorGUILayout.BeginHorizontal();
+        {
+            GUILayout.Label("Filter Mode", GUILayout.Width(120));
+            filterMode = (FilterMode)EditorGUILayout.EnumPopup(filterMode, GUILayout.Width(200));
+        }
+        EditorGUILayout.EndHorizontal();
+        #endregion
+
+        #region Sprite Naming Scheme
+        GUILayout.Space(15);
+        namingScheme = (SpriteNamingScheme)EditorGUILayout.EnumPopup("Naming Scheme", namingScheme);
+
+        if (namingScheme == SpriteNamingScheme.PrefixNumberWithLeadingZeros)
+        {
             GUILayout.Space(10);
             EditorGUILayout.BeginHorizontal();
             {
-                GUILayout.Label("Pixels Per Unit", GUILayout.Width(120));
-                pixelsPerUnit = EditorGUILayout.IntSlider(pixelsPerUnit, 1, 100);
+                GUILayout.Label("Leading Zeros", GUILayout.Width(120));
+                leadingZeros = EditorGUILayout.IntSlider(leadingZeros, 1, 5);
             }
             EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.BeginHorizontal();
-
-            ButtonGroup(buttonCount: 3, widthValue: 12, labelFormat: "{0}", onButtonClick: size => pixelsPerUnit = size);
-
-            EditorGUILayout.EndHorizontal();
-            #endregion
-
-            #region Filter Mode
-            GUILayout.Space(15);
-            EditorGUILayout.BeginHorizontal();
-            {
-                GUILayout.Label("Filter Mode", GUILayout.Width(120));
-                filterMode = (FilterMode)EditorGUILayout.EnumPopup(filterMode, GUILayout.Width(200));
-            }
-            EditorGUILayout.EndHorizontal();
-            #endregion
-
-            #region Sprite Naming Scheme
-            GUILayout.Space(15);
-            namingScheme = (SpriteNamingScheme)EditorGUILayout.EnumPopup("Naming Scheme", namingScheme);
-
-            if (namingScheme == SpriteNamingScheme.PrefixNumberWithLeadingZeros)
-            {
-                GUILayout.Space(10);
-                EditorGUILayout.BeginHorizontal();
-                {
-                    GUILayout.Label("Leading Zeros", GUILayout.Width(120));
-                    leadingZeros = EditorGUILayout.IntSlider(leadingZeros, 1, 5);
-                }
-                EditorGUILayout.EndHorizontal();
-            }
-            #endregion
-
-            #region Sprite Prefix
-            GUILayout.Space(5);
-            EditorGUILayout.BeginHorizontal();
-            {
-                GUILayout.Label("Sprite Prefix", GUILayout.Width(120));
-                spritePrefix = EditorGUILayout.TextField(spritePrefix, GUILayout.Width(200));
-            }
-            EditorGUILayout.EndHorizontal();
-            #endregion
         }
+        #endregion
+
+        #region Sprite Prefix
+        GUILayout.Space(5);
+        EditorGUILayout.BeginHorizontal();
+        {
+            GUILayout.Label("Sprite Prefix", GUILayout.Width(120));
+            spritePrefix = EditorGUILayout.TextField(spritePrefix, GUILayout.Width(200));
+        }
+        EditorGUILayout.EndHorizontal();
+        #endregion
     }
 
     private void ButtonGroup(int buttonCount, int widthValue, string labelFormat, System.Action<int> onButtonClick)
