@@ -2,10 +2,8 @@
 using UnityEditor;
 using UnityEditorInternal;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
-internal class SpriteSlicer : EditorWindow
+public class SpriteSlicer : EditorWindow
 {
     /*
 
@@ -101,7 +99,7 @@ internal class SpriteSlicer : EditorWindow
 
         #region Slice Button
         Color originalSliceColor = GUI.backgroundColor;
-        GUI.backgroundColor = Color.green; 
+        GUI.backgroundColor = Color.green;
 
         if (GUILayout.Button("Slice", GUILayout.Height(30)))
         {
@@ -118,182 +116,38 @@ internal class SpriteSlicer : EditorWindow
 
     private void Slice()
     {
-        string resourcesPath = Path.Combine(Application.dataPath, "Resources");
-        string folderPath = Path.Combine(resourcesPath, "ToSlice");
-
-        if (!Directory.Exists(folderPath))
+        if (sprites.Count == 0)
         {
-            Directory.CreateDirectory(folderPath);
-            AssetDatabase.Refresh();
+            EditorUtility.DisplayDialog("No Sprites", "Please add at least one sprite to slice.", "OK");
+            return;
         }
 
-        for (int i = 0; i < sprites.Count; i++)
+        foreach (var sprite in sprites)
         {
-            Sprite sprite = sprites[i];
+            if (sprite == null) continue;
 
-            if (sprite != null)
+            string path = AssetDatabase.GetAssetPath(sprite);
+            Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+
+            if (tex != null)
             {
-                MoveSpriteToFolder(sprite, folderPath);
+                SpriteSlicingProcessor.Slice(tex, path, pivot, sliceWidth, sliceHeight, pixelsPerUnit, filterMode, namingScheme, spritePrefix, leadingZeros);
             }
         }
 
         AssetDatabase.Refresh();
-        SpriteSliceCore();
 
         sprites.Clear();
         reorderableList.list = sprites;
-
         Repaint();
-    }
 
-    private void SpriteSliceCore()
-    {
-        Object[] spriteSheets = Resources.LoadAll("ToSlice", typeof(Texture2D));
-        if (spriteSheets.Length == 0)
-        {
-            Debug.LogWarning("No sprites found in the ToSlice folder");
-            return;
-        }
-
-        for (int z = 0; z < spriteSheets.Length; z++)
-        {
-            string path = AssetDatabase.GetAssetPath(spriteSheets[z]);
-            TextureImporter ti = AssetImporter.GetAtPath(path) as TextureImporter;
-            ti.isReadable = true;
-            ti.spriteImportMode = SpriteImportMode.Multiple;
-            ti.filterMode = filterMode;
-            ti.textureCompression = TextureImporterCompression.Uncompressed;
-            ti.spritePixelsPerUnit = pixelsPerUnit;
-
-            List<SpriteMetaData> newData = new List<SpriteMetaData>();
-            Texture2D spriteSheet = spriteSheets[z] as Texture2D;
-
-            int spriteIndex = 0;
-            for (int i = 0; i < spriteSheet.width; i += sliceWidth)
-            {
-                for (int j = spriteSheet.height; j > 0; j -= sliceHeight)
-                {
-                    SpriteMetaData smd = new SpriteMetaData();
-                    smd.pivot = pivot;
-                    smd.alignment = 9; //Custom
-                    smd.rect = new Rect(i, j - sliceHeight, sliceWidth, sliceHeight);
-
-                    string spriteName = GenerateSpriteName(spriteIndex++);
-                    smd.name = spriteName;
-
-                    newData.Add(smd);
-                }
-            }
-
-            ti.spritesheet = newData.ToArray();
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-        }
-
-        if (spriteSheets.Length != 0)
-        {
-            Debug.Log("Done Slicing!");
-        }
-    }
-
-    private string GenerateSpriteName(int index)
-    {
-        switch (namingScheme)
-        {
-            case SpriteNamingScheme.PrefixNumber:
-                return $"{spritePrefix}{index + 1}";
-
-            case SpriteNamingScheme.PrefixParenthesesNumber:
-                return $"{spritePrefix}({index + 1})";
-
-            case SpriteNamingScheme.PrefixNumberWithLeadingZeros:
-                return $"{spritePrefix}{(index + 1).ToString($"D{leadingZeros}")}";
-
-            default:
-                return $"{spritePrefix}{index + 1}";
-        }
-    }
-
-    private void MoveSpriteToFolder(Sprite sprite, string folderPath)
-    {
-        string spritePath = AssetDatabase.GetAssetPath(sprite);
-        string spriteDirectory = Path.GetDirectoryName(spritePath);
-
-        if (!spriteDirectory.EndsWith("ToSlice"))
-        {
-            string newSpritePath = Path.Combine(folderPath, Path.GetFileName(spritePath));
-            AssetDatabase.CopyAsset(spritePath, newSpritePath);
-            AssetDatabase.DeleteAsset(spritePath);
-        }
+        Debug.Log("Done Slicing!");
     }
 
     private void SliceSettings()
     {
-        GUIStyle headerStyle = new GUIStyle(EditorStyles.label);
-        headerStyle.fontSize = 14;
-        headerStyle.fontStyle = FontStyle.Bold;
-        headerStyle.normal.textColor = new Color(0.2f, 0.6f, 1f);
-
-        GUILayout.Label("Sprite Slicer Settings", headerStyle);
-
-        GUILayout.Space(5);
-
-        if (!showAdvancedSettings)
-        {
-            DrawSimpleSliders();
-        }
-        else
-        {
-            DrawAdvancedSliders();
-        }
-
-        GUIContent advancedToogleContent = new GUIContent("Advanced", "Enable advanced options for manual slice width and height.");
-        showAdvancedSettings = EditorGUILayout.Toggle(advancedToogleContent, showAdvancedSettings);
-
-        GUILayout.Space(5);
-
-        GUILayout.Label("Quick Selection");
-
-        ButtonGroup(buttonCount: 4, widthValue: 15, labelFormat: "{0}x{0}", onButtonClick: size =>
-        {
-            sliceWidth = sliceHeight = size;
-        });
+        SliceSettingsDrawer.Draw(ref sliceWidth, ref sliceHeight, sliceOptions, ref showAdvancedSettings);
     }
-
-    #region Slice Settings Methods
-    private void DrawSimpleSliders()
-    {
-        sliceWidth = EditorGUILayout.IntSlider("Slice Width", sliceWidth, sliceOptions[0], sliceOptions[^1]);
-        sliceHeight = EditorGUILayout.IntSlider("Slice Height", sliceHeight, sliceOptions[0], sliceOptions[^1]);
-
-        sliceWidth = RoundToNearestOption(sliceWidth);
-        sliceHeight = RoundToNearestOption(sliceHeight);
-    }
-
-    private void DrawAdvancedSliders()
-    {
-        sliceWidth = EditorGUILayout.IntSlider("Slice Width", sliceWidth, 1, 512);
-        sliceHeight = EditorGUILayout.IntSlider("Slice Height", sliceHeight, 1, 512);
-    }
-
-    private int RoundToNearestOption(int value)
-    {
-        int closestValue = sliceOptions[0];
-        float minDifference = Mathf.Abs(value - closestValue);
-
-        for (int i = 0; i < sliceOptions.Length; i++)
-        {
-            int option = sliceOptions[i];
-            float difference = Mathf.Abs(value - option);
-            if (difference < minDifference)
-            {
-                minDifference = difference;
-                closestValue = option;
-            }
-        }
-
-        return closestValue;
-    }
-    #endregion
 
     private void SpriteSettings()
     {
