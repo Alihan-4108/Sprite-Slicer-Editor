@@ -5,15 +5,6 @@ using System.Collections.Generic;
 
 public class SpriteSlicer : EditorWindow
 {
-    /*
-
-                Attention! After the sprites are sliced,
-                they will be stacked in the Resources/ToSlice folder
-
-                Editor path = Window -> SpriteSlicer
-
-    */
-
     private List<Sprite> sprites = new List<Sprite>();
     private ReorderableList reorderableList;
 
@@ -63,7 +54,7 @@ public class SpriteSlicer : EditorWindow
         showSliceSettings = EditorGUILayout.Foldout(showSliceSettings, "Slice Settings", true, EditorStyles.foldoutHeader);
         if (showSliceSettings) SliceSettings();
 
-        GUILayout.Space(10);
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
 
         showSpriteSettings = EditorGUILayout.Foldout(showSpriteSettings, "Sprite Settings", true, EditorStyles.foldoutHeader);
         if (showSpriteSettings) SpriteSettings();
@@ -78,10 +69,8 @@ public class SpriteSlicer : EditorWindow
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
 
-            // Original color save
             Color originalColor = GUI.backgroundColor;
 
-            // Clear All Button - Kırmızı renk
             GUI.backgroundColor = Color.red;
 
             if (GUILayout.Button("Clear All", GUILayout.Width(100), GUILayout.Height(20)))
@@ -156,47 +145,67 @@ public class SpriteSlicer : EditorWindow
         EditorGUILayout.BeginHorizontal();
         {
             GUILayout.Space(10);
-            pivot = EditorGUILayout.Vector2Field("Pivot", pivot, GUILayout.Width(200));
+            pivot = EditorGUILayout.Vector2Field(
+                new GUIContent("Pivot", "Defines the center point of each sliced sprite. (0,0) = bottom-left, (0.5,0.5) = center, (1,1) = top-right."),
+                pivot,
+                GUILayout.Width(250)
+            );
         }
         EditorGUILayout.EndHorizontal();
+        GUILayout.Space(5);
         #endregion
 
+        GUILayout.Space(5);
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+
         #region Pixels Per Unit
-        GUILayout.Space(10);
+        GUILayout.Space(5);
+        EditorGUILayout.HelpBox("The Pixels Per Unit (PPU) value determines the physical size of the sprite in the scene. For example, 100 pixels = 1 Unity unit.", MessageType.None);
+
         EditorGUILayout.BeginHorizontal();
         {
-            GUILayout.Label("Pixels Per Unit", GUILayout.Width(120));
+            GUILayout.Label(new GUIContent("Pixels Per Unit", "Number of pixels that equal one Unity unit."), GUILayout.Width(120));
             pixelsPerUnit = EditorGUILayout.IntSlider(pixelsPerUnit, 1, 100);
         }
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.BeginHorizontal();
-
         ButtonGroup(buttonCount: 3, widthValue: 12, labelFormat: "{0}", onButtonClick: size => pixelsPerUnit = size);
-
         EditorGUILayout.EndHorizontal();
+        GUILayout.Space(5);
         #endregion
+
+        GUILayout.Space(5);
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
 
         #region Filter Mode
-        GUILayout.Space(15);
+        GUILayout.Space(5);
+
         EditorGUILayout.BeginHorizontal();
         {
-            GUILayout.Label("Filter Mode", GUILayout.Width(120));
+            GUILayout.Label(new GUIContent("Filter Mode", "Determines how the sprite texture will appear when zoomed in or out."), GUILayout.Width(120));
             filterMode = (FilterMode)EditorGUILayout.EnumPopup(filterMode, GUILayout.Width(200));
         }
+
+        GUILayout.Space(5);
         EditorGUILayout.EndHorizontal();
         #endregion
 
+        GUILayout.Space(5);
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+
         #region Sprite Naming Scheme
-        GUILayout.Space(15);
-        namingScheme = (SpriteNamingScheme)EditorGUILayout.EnumPopup("Naming Scheme", namingScheme);
+        GUILayout.Space(5);
+        EditorGUILayout.HelpBox("Choose the naming pattern for sliced sprites. This helps in organizing sprite assets.", MessageType.None);
+
+        namingScheme = (SpriteNamingScheme)EditorGUILayout.EnumPopup(new GUIContent("Naming Scheme", "How the sliced sprites will be named."), namingScheme);
 
         if (namingScheme == SpriteNamingScheme.PrefixNumberWithLeadingZeros)
         {
             GUILayout.Space(10);
             EditorGUILayout.BeginHorizontal();
             {
-                GUILayout.Label("Leading Zeros", GUILayout.Width(120));
+                GUILayout.Label(new GUIContent("Leading Zeros", "Specifies how many digits should be used for numbering (e.g., 001, 002, 003)."), GUILayout.Width(120));
                 leadingZeros = EditorGUILayout.IntSlider(leadingZeros, 1, 5);
             }
             EditorGUILayout.EndHorizontal();
@@ -207,7 +216,7 @@ public class SpriteSlicer : EditorWindow
         GUILayout.Space(5);
         EditorGUILayout.BeginHorizontal();
         {
-            GUILayout.Label("Sprite Prefix", GUILayout.Width(120));
+            GUILayout.Label(new GUIContent("Sprite Prefix", "Text added as a prefix to the name of each sliced sprite."), GUILayout.Width(120));
             spritePrefix = EditorGUILayout.TextField(spritePrefix, GUILayout.Width(200));
         }
         EditorGUILayout.EndHorizontal();

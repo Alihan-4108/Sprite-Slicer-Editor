@@ -1,49 +1,39 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 public static class SliceSettingsDrawer
 {
-    public static void Draw(ref int sliceWidth, ref int sliceHeight, int[] sliceOptions, ref bool showAdvancedSettings)
+    public static void Draw(ref int sliceWidth, ref int sliceHeight, int[] sliceOptions, ref bool useCustomSize)
     {
         GUILayout.Label("Sprite Slicer Settings", EditorStyles.boldLabel);
 
         GUILayout.Space(5);
 
-        if (!showAdvancedSettings)
-        {
-            sliceWidth = EditorGUILayout.IntSlider("Slice Width", sliceWidth, sliceOptions[0], sliceOptions[^1]);
-            sliceHeight = EditorGUILayout.IntSlider("Slice Height", sliceHeight, sliceOptions[0], sliceOptions[^1]);
+        // Kullanıcıya 'Custom Size' seçeneğini gösteren bir buton ekleyelim
+        useCustomSize = EditorGUILayout.Toggle("Enable Predefined Sizes", useCustomSize);
 
-            sliceWidth = RoundToNearestOption(sliceWidth, sliceOptions);
-            sliceHeight = RoundToNearestOption(sliceHeight, sliceOptions);
+        // Eğer Custom Size aktifse, sliceWidth ve sliceHeight değerlerini sliceOptions dizisi ile sınırlayacağız
+        if (useCustomSize)
+        {
+            sliceWidth = EditorGUILayout.IntPopup("Slice Width", sliceWidth, GetOptionLabels(sliceOptions), sliceOptions);
+            sliceHeight = EditorGUILayout.IntPopup("Slice Height", sliceHeight, GetOptionLabels(sliceOptions), sliceOptions);
         }
         else
         {
+            // Eğer Custom Size seçilmediyse, daha geniş bir aralıkta dilimleme yapılabilir
             sliceWidth = EditorGUILayout.IntSlider("Slice Width", sliceWidth, 1, 512);
             sliceHeight = EditorGUILayout.IntSlider("Slice Height", sliceHeight, 1, 512);
         }
-
-        GUIContent advancedToggle = new GUIContent("Advanced", "Enable advanced options for manual slice width and height.");
-        showAdvancedSettings = EditorGUILayout.Toggle(advancedToggle, showAdvancedSettings);
     }
 
-    // Yuvarlama fonksiyonu
-    private static int RoundToNearestOption(int value, int[] sliceOptions)
+    // Slice Options dizisindeki sayılara karşılık gelen etiketleri döndüren bir yardımcı fonksiyon
+    private static string[] GetOptionLabels(int[] options)
     {
-        int closestValue = sliceOptions[0];
-        float minDifference = Mathf.Abs(value - closestValue);
-
-        for (int i = 0; i < sliceOptions.Length; i++)
+        string[] labels = new string[options.Length];
+        for (int i = 0; i < options.Length; i++)
         {
-            int option = sliceOptions[i];
-            float difference = Mathf.Abs(value - option);
-            if (difference < minDifference)
-            {
-                minDifference = difference;
-                closestValue = option;
-            }
+            labels[i] = options[i].ToString();  // Etiketler, sayıları string'e çevirerek gösterir
         }
-
-        return closestValue;
+        return labels;
     }
 }
