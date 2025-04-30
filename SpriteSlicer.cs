@@ -18,7 +18,7 @@ public class SpriteSlicer : EditorWindow
 
     private bool showAdvancedSettings = false;
     private bool showSliceSettings = true;
-    private bool showSpriteSettings = true;
+    private bool showSpriteSettings = false;
 
     private Vector2 pivot = new Vector2(0.5f, 0.5f);
 
@@ -34,6 +34,8 @@ public class SpriteSlicer : EditorWindow
     private SpriteNamingScheme namingScheme = SpriteNamingScheme.PrefixNumber;
     private string spritePrefix = "sprite_";
     private int leadingZeros = 3;
+
+    private bool appendSlicedToParentName = true;
     #endregion
 
     [MenuItem("Window/SpriteSlicer")]
@@ -120,7 +122,8 @@ public class SpriteSlicer : EditorWindow
 
             if (tex != null)
             {
-                SpriteSlicingProcessor.Slice(tex, path, pivot, sliceWidth, sliceHeight, pixelsPerUnit, filterMode, namingScheme, spritePrefix, leadingZeros);
+                SpriteSlicingProcessor.Slice(tex, path, pivot, sliceWidth, sliceHeight, pixelsPerUnit, filterMode,
+                                                   namingScheme, spritePrefix, leadingZeros, appendSlicedToParentName);
             }
         }
 
@@ -145,11 +148,30 @@ public class SpriteSlicer : EditorWindow
         EditorGUILayout.BeginHorizontal();
         {
             GUILayout.Space(10);
-            pivot = EditorGUILayout.Vector2Field(
+
+            EditorGUILayout.LabelField(
                 new GUIContent("Pivot", "Defines the center point of each sliced sprite. (0,0) = bottom-left, (0.5,0.5) = center, (1,1) = top-right."),
-                pivot,
-                GUILayout.Width(250)
+                GUILayout.Width(120)
             );
+
+            // Vector2Field çizimi
+            pivot = EditorGUILayout.Vector2Field(
+                GUIContent.none,
+                pivot,
+                GUILayout.Width(150)
+            );
+
+            // Son çizilen rect'i al
+            Rect lastRect = GUILayoutUtility.GetLastRect();
+
+            float buttonWidth = 75;
+            float buttonHeight = lastRect.height + 2;
+
+            Rect buttonRect = new Rect(lastRect.xMax + 5, lastRect.y - 1, buttonWidth, buttonHeight);
+            if (GUI.Button(buttonRect, "Default"))
+            {
+                pivot = new Vector2(0.5f, 0.5f);
+            }
         }
         EditorGUILayout.EndHorizontal();
         GUILayout.Space(5);
@@ -219,6 +241,20 @@ public class SpriteSlicer : EditorWindow
             GUILayout.Label(new GUIContent("Sprite Prefix", "Text added as a prefix to the name of each sliced sprite."), GUILayout.Width(120));
             spritePrefix = EditorGUILayout.TextField(spritePrefix, GUILayout.Width(200));
         }
+        EditorGUILayout.EndHorizontal();
+        #endregion
+
+        GUILayout.Space(5);
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+
+        #region Append '(Slice)' to Parent Sprite Name
+        GUILayout.Space(5);
+        EditorGUILayout.HelpBox("If enabled, '(Slice)' will be added to the original sprite name to indicate that it has been sliced.", MessageType.None);
+        GUILayout.Space(5);
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Add '(Slice)' to Parent Sprite Name", GUILayout.Width(202)); // Etiketin genişliği ayarlanabilir
+        appendSlicedToParentName = EditorGUILayout.Toggle(appendSlicedToParentName);
         EditorGUILayout.EndHorizontal();
         #endregion
     }
@@ -299,7 +335,6 @@ public class SpriteSlicer : EditorWindow
             AddDraggedObjectsToList();
             evt.Use();
         }
-
     }
 
     private void AddDraggedObjectsToList()
@@ -314,7 +349,14 @@ public class SpriteSlicer : EditorWindow
 
             if (sprite != null)
             {
-                sprites.Add(sprite);
+                if (!sprites.Contains(sprite))
+                {
+                    sprites.Add(sprite);
+                }
+                else
+                {
+                    EditorUtility.DisplayDialog("Duplicate Sprite", $"The sprite '{sprite.name}' is already in the list. Duplicate entries are not allowed.", "OK");
+                }
             }
         }
     }
