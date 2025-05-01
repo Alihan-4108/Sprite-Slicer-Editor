@@ -16,7 +16,7 @@ public class SpriteSlicer : EditorWindow
     private int sliceHeight = 8;
     private int[] sliceOptions = new int[] { 8, 16, 24, 32, 48, 64, 96, 128, 256, 512 };
 
-    private bool showAdvancedSettings = false;
+    private bool showAdvancedSettings = true;
     private bool showSliceSettings = true;
     private bool showSpriteSettings = false;
 
@@ -38,7 +38,7 @@ public class SpriteSlicer : EditorWindow
     private bool appendSlicedToParentName = true;
     #endregion
 
-    [MenuItem("Window/SpriteSlicer")]
+    [MenuItem("Tools/SpriteSlicer")]
     public static void ShowWindow()
     {
         GetWindow<SpriteSlicer>("Sprite Slicer");
