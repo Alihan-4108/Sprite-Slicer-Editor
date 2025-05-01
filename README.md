@@ -40,20 +40,20 @@ This editor is made for batch slicing sprites for your 2D games
 **Sprite Settings**
 
 - **Pivot**: Sets the pivot point for each sliced sprite (0,0 = bottom-left; 0.5,0.5 = center).
-- 
+  
 - **Pixels Per Unit (PPU)**: Determines how much space a sprite takes in the scene. 100 PPU = 1 Unity unit.
-- 
+  
 - **Filter Mode**: Controls how the sprite appears when scaled.
-- 
+  
 - **Naming Scheme**:
   - `PrefixNumber`: `sprite_1`, `sprite_2`, ...
   - `PrefixParenthesesNumber`: `sprite_(1)`, ...
   - `PrefixNumberWithLeadingZeros`: `sprite_001`, `sprite_002`, ...
-  - 
+    
 - **Sprite Prefix**: A prefix added to the name of each sliced sprite (e.g., `enemy_`).
-- 
+  
 - **Leading Zeros**: Number of digits used in zero-padding (e.g., 3 = `sprite_001`).
-- 
+  
 - **Add '(Sliced)' to Parent Sprite Name**: Appends `(Sliced)` to the original texture's name.
 
 
