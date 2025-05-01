@@ -3,7 +3,7 @@
 This editor is made for batch slicing sprites for your 2D games 
 (Developed for the Unity game engine). 
 
-                Editor path = Window -> SpriteSlicer
+                Editor path = Tools -> SpriteSlicer
 
 ---
 
@@ -34,28 +34,27 @@ This editor is made for batch slicing sprites for your 2D games
 **Slice Settings**
 
 - **Slice Width / Height**: Defines the width and height of each slice (e.g., 32x32).
+
 - **Enable Predefined Sizes**: Lets you choose from common sizes (8, 16, 32, ...). Disable it to enter custom values.
 
 **Sprite Settings**
 
 - **Pivot**: Sets the pivot point for each sliced sprite (0,0 = bottom-left; 0.5,0.5 = center).
+- 
 - **Pixels Per Unit (PPU)**: Determines how much space a sprite takes in the scene. 100 PPU = 1 Unity unit.
+- 
 - **Filter Mode**: Controls how the sprite appears when scaled.
+- 
 - **Naming Scheme**:
   - `PrefixNumber`: `sprite_1`, `sprite_2`, ...
   - `PrefixParenthesesNumber`: `sprite_(1)`, ...
   - `PrefixNumberWithLeadingZeros`: `sprite_001`, `sprite_002`, ...
+  - 
 - **Sprite Prefix**: A prefix added to the name of each sliced sprite (e.g., `enemy_`).
+- 
 - **Leading Zeros**: Number of digits used in zero-padding (e.g., 3 = `sprite_001`).
+- 
 - **Add '(Sliced)' to Parent Sprite Name**: Appends `(Sliced)` to the original texture's name.
-
----
-
-🞧 Extra Features
-
-- Reorder, remove, or clear the sprite list with one click.
-- Warns if you try to add the same sprite more than once.
-- Supports both texture and sprite assets via drag-and-drop.
 
 
 ![2024-08-09-21-48-12](https://github.com/user-attachments/assets/15d4db75-89cc-4d80-9920-0ad512f685ff)
