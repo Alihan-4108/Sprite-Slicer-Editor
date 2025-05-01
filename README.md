@@ -1,7 +1,6 @@
 # Sprite Slicer Editor
 
-This editor is made for batch slicing sprites for your 2D games 
-(Developed for the Unity game engine). 
+Sprite Slicer is an Editor tool developed for Unity. It automatically slices one or more sprites at a time to a specific width and height.
 
                 Editor path = Tools -> SpriteSlicer
 
