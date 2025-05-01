@@ -50,7 +50,7 @@ This editor is made for batch slicing sprites for your 2D games
   - `PrefixParenthesesNumber`: `sprite_(1)`, ...
   - `PrefixNumberWithLeadingZeros`: `sprite_001`, `sprite_002`, ...
     
-- **Sprite Prefix**: A prefix added to the name of each sliced sprite (e.g., `enemy_`).
+- **Sprite Prefix**: A prefix added to the name of each sliced sprite (e.g., `sprite_`).
   
 - **Leading Zeros**: Number of digits used in zero-padding (e.g., 3 = `sprite_001`).
   
