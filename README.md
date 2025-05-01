@@ -56,4 +56,4 @@ Sprite Slicer is an Editor tool developed for Unity. It automatically slices one
 - **Add '(Sliced)' to Parent Sprite Name**: Appends `(Sliced)` to the original texture's name.
 
 
-![2024-08-09-21-48-12](https://github.com/user-attachments/assets/15d4db75-89cc-4d80-9920-0ad512f685ff)
+https://github.com/user-attachments/assets/95d2b43d-7159-4dc7-879f-9139d27f4316
