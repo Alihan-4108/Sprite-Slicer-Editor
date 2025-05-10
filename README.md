@@ -1,6 +1,6 @@
 # Sprite Slicer Editor
 
-Sprite Slicer is an Editor tool developed for Unity. It automatically slices one or more sprites at a time to a specific width and height.
+Sprite Slicer is an Editor tool developed for Unity. Automatically slices one or more sprites of the same width and height.
 
                 Editor path = Tools -> SpriteSlicer
 
