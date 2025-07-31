@@ -1,11 +1,10 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
-using System.Collections.Generic;
 
 public class SpriteSlicer : EditorWindow
 {
-    private List<Sprite> sprites = new List<Sprite>();
+    private SlicerDataContainer dataContainer;
     private ReorderableList reorderableList;
 
     private Vector2 scrollPosition;
@@ -46,6 +45,7 @@ public class SpriteSlicer : EditorWindow
 
     private void OnEnable()
     {
+        dataContainer = ScriptableObject.CreateInstance<SlicerDataContainer>();
         InitializeReorderableList();
     }
 
@@ -66,7 +66,7 @@ public class SpriteSlicer : EditorWindow
         GUILayout.Space(20);
 
         #region Clear All Sprites Button
-        if (sprites.Count > 0)
+        if (dataContainer.sprites.Count > 0)
         {
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
@@ -77,7 +77,7 @@ public class SpriteSlicer : EditorWindow
 
             if (GUILayout.Button("Clear All", GUILayout.Width(100), GUILayout.Height(20)))
             {
-                sprites.Clear();
+                dataContainer.sprites.Clear();
             }
 
             GUI.backgroundColor = originalColor;
@@ -107,13 +107,13 @@ public class SpriteSlicer : EditorWindow
 
     private void Slice()
     {
-        if (sprites.Count == 0)
+        if (dataContainer.sprites.Count == 0)
         {
             EditorUtility.DisplayDialog("No Sprites", "Please add at least one sprite to slice.", "OK");
             return;
         }
 
-        foreach (var sprite in sprites)
+        foreach (var sprite in dataContainer.sprites)
         {
             if (sprite == null) continue;
 
@@ -129,8 +129,8 @@ public class SpriteSlicer : EditorWindow
 
         AssetDatabase.Refresh();
 
-        sprites.Clear();
-        reorderableList.list = sprites;
+        dataContainer.sprites.Clear();
+        reorderableList.list = dataContainer.sprites;
         Repaint();
 
         Debug.Log("Done Slicing!");
@@ -285,38 +285,74 @@ public class SpriteSlicer : EditorWindow
 
     private void InitializeReorderableList()
     {
-        reorderableList = new ReorderableList(sprites, typeof(Sprite), true, true, true, true)
+        reorderableList = new ReorderableList(dataContainer.sprites, typeof(Sprite), true, true, true, true)
         {
             drawHeaderCallback = rect => EditorGUI.LabelField(rect, "Sprites"),
+
             drawElementCallback = (rect, index, isActive, isFocused) =>
             {
-                if (index >= 0 && index < sprites.Count)
+                if (index >= 0 && index < dataContainer.sprites.Count)
                 {
                     EditorGUI.BeginChangeCheck();
-                    sprites[index] = (Sprite)EditorGUI.ObjectField(
-                        new Rect(rect.x, rect.y, rect.width - 30, EditorGUIUtility.singleLineHeight),
-                        sprites[index], typeof(Sprite), false);
 
-                    if (EditorGUI.EndChangeCheck() && sprites[index] == null)
+                    Sprite originalSprite = dataContainer.sprites[index];
+
+                    Sprite newSprite = (Sprite)EditorGUI.ObjectField(
+                        new Rect(rect.x, rect.y, rect.width - 30, EditorGUIUtility.singleLineHeight),
+                        originalSprite, typeof(Sprite), false);
+
+                    //Değişiklik olduğunda
+                    if (EditorGUI.EndChangeCheck())
                     {
-                        sprites.RemoveAt(index);
+                        Undo.RecordObject(dataContainer, "Change Sprite");
+                        dataContainer.sprites[index] = newSprite;
+                        EditorUtility.SetDirty(dataContainer);
+
+                        if (newSprite == null)
+                        {
+                            Undo.RecordObject(dataContainer, "Remove Sprite");
+                            dataContainer.sprites.RemoveAt(index);
+                            EditorUtility.SetDirty(dataContainer);
+                            return; // Liste değişti, devam etme
+                        }
                     }
 
                     Rect removeButtonRect = new Rect(rect.x + rect.width - 30, rect.y, 30, EditorGUIUtility.singleLineHeight);
+
                     GUIStyle buttonStyle = new GUIStyle(GUI.skin.button)
                     {
                         alignment = TextAnchor.MiddleCenter,
                         fontSize = 12,
                         fixedWidth = 30,
                     };
+
                     if (GUI.Button(removeButtonRect, "X", buttonStyle))
                     {
-                        sprites.RemoveAt(index);
+                        Undo.RecordObject(dataContainer, "Remove Sprite");
+                        dataContainer.sprites.RemoveAt(index);
+                        EditorUtility.SetDirty(dataContainer);
                     }
                 }
             },
-            onAddCallback = list => sprites.Add(null),
-            onRemoveCallback = list => sprites.RemoveAt(list.index)
+
+            //Listenin "+" yani eleman ekleme butonuna tıklarsam
+            onAddCallback = list =>
+            {
+                Undo.RecordObject(dataContainer, "Add Sprite");
+                dataContainer.sprites.Add(null);
+                EditorUtility.SetDirty(dataContainer);
+            },
+
+            //listenin "-" yani eleman kaldırma butonuna tıklarsam
+            onRemoveCallback = list =>
+            {
+                if (list.index >= 0 && list.index < dataContainer.sprites.Count)
+                {
+                    Undo.RecordObject(dataContainer, "Remove Sprite");
+                    dataContainer.sprites.RemoveAt(list.index);
+                    EditorUtility.SetDirty(dataContainer);
+                }
+            }
         };
     }
 
@@ -339,9 +375,12 @@ public class SpriteSlicer : EditorWindow
 
     private void AddDraggedObjectsToList()
     {
+        bool anyAdded = false;
+
         foreach (Object draggedObject in DragAndDrop.objectReferences)
         {
             Sprite sprite = draggedObject as Sprite;
+
             if (sprite == null)
             {
                 sprite = ConvertTextureToSprite(draggedObject);
@@ -349,9 +388,15 @@ public class SpriteSlicer : EditorWindow
 
             if (sprite != null)
             {
-                if (!sprites.Contains(sprite))
+                if (!dataContainer.sprites.Contains(sprite))
                 {
-                    sprites.Add(sprite);
+                    if (!anyAdded)
+                    {
+                        Undo.RecordObject(dataContainer, "Add Sprite Drag & Drop");
+                        anyAdded = true;
+                    }
+
+                    dataContainer.sprites.Add(sprite);
                 }
                 else
                 {
@@ -359,6 +404,9 @@ public class SpriteSlicer : EditorWindow
                 }
             }
         }
+
+        if (anyAdded)
+            EditorUtility.SetDirty(dataContainer);
     }
 
     private Sprite ConvertTextureToSprite(Object draggedObject)

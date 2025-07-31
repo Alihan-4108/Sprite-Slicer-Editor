@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using UnityEditor.U2D.Sprites;
@@ -6,7 +6,7 @@ using UnityEditor.U2D.Sprites;
 public class SpriteSlicingProcessor
 {
     public static void Slice(Texture2D texture, string path, Vector2 pivot, int sliceWidth, int sliceHeight, int pixelsPerUnit,
-                          FilterMode filterMode, SpriteSlicer.SpriteNamingScheme namingScheme, string prefix, int leadingZeros, bool appendSlicedToParentName)
+            FilterMode filterMode, SpriteSlicer.SpriteNamingScheme namingScheme, string prefix, int leadingZeros, bool appendSlicedToParentName)
     {
         string parentSpriteName = System.IO.Path.GetFileNameWithoutExtension(path);
         string newParentName = appendSlicedToParentName ? parentSpriteName + " (Sliced)" : parentSpriteName;
