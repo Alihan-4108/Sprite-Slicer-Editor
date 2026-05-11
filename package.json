@@ -6,6 +6,8 @@
   "unity": "2022.3",
   "author": {
     "name": "Alihan Aydin"
+  },
+   "dependencies": {
+    "com.unity.2d.sprite": "1.0.0"
   }
-  
 }
