@@ -255,7 +255,7 @@ namespace Alihan4108.SpriteSlicer
             GUILayout.Space(5);
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Add '(Slice)' to Parent Sprite Name", GUILayout.Width(202)); // Etiketin genişliği ayarlanabilir
+            EditorGUILayout.LabelField("Add '(Slice)' to Parent Sprite Name", GUILayout.Width(202));
             appendSlicedToParentName = EditorGUILayout.Toggle(appendSlicedToParentName);
             EditorGUILayout.EndHorizontal();
             #endregion
@@ -315,7 +315,7 @@ namespace Alihan4108.SpriteSlicer
                                 Undo.RecordObject(dataContainer, "Remove Sprite");
                                 dataContainer.sprites.RemoveAt(index);
                                 EditorUtility.SetDirty(dataContainer);
-                                return; // Liste değişti, devam etme
+                                return;
                             }
                         }
 
