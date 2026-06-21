@@ -29,7 +29,6 @@ namespace Alihan4108.SpriteSlicer
                 AssetDatabase.Refresh();
             }
 
-            // Sprite'ları dilimlemeye başlıyoruz
             var factory = new SpriteDataProviderFactories();
             factory.Init();
             var dataProvider = factory.GetSpriteEditorDataProviderFromObject(ti);
